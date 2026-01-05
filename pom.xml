@@ -8,7 +8,8 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.7.0</version>
+        <!-- Use a compatible version for Java 11 -->
+        <version>2.7.18</version> <!-- Changed to a stable version -->
         <relativePath/>
     </parent>
 
@@ -17,12 +18,13 @@
     <version>1.0.0</version>
     <name>Country Chicken Backend</name>
     <description>Backend for Country Chicken Application</description>
-    <packaging>jar</packaging>
 
     <properties>
         <java.version>11</java.version>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
+        <!-- Use older, more compatible Lombok version -->
+        <lombok.version>1.18.24</lombok.version>
     </properties>
 
     <dependencies>
@@ -37,29 +39,20 @@
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
         
-        <!-- Lombok -->
+        <!-- Lombok with specific version -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
             <scope>provided</scope>
         </dependency>
         
-        <!-- Database (choose one) -->
-        <!-- For H2 Database (in-memory) -->
+        <!-- H2 Database -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <scope>runtime</scope>
         </dependency>
-        
-        <!-- OR For MySQL -->
-        <!--
-        <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        -->
         
         <!-- Test Dependencies -->
         <dependency>
@@ -76,25 +69,19 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
             
-            <!-- Compiler plugin with Lombok support -->
+            <!-- Use a simpler compiler configuration -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.11.0</version>
+                <version>3.10.1</version> <!-- Downgraded version -->
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                            <version>${lombok.version}</version>
-                        </path>
-                    </annotationProcessorPaths>
+                    <!-- Simple configuration without annotationProcessorPaths -->
                 </configuration>
             </plugin>
             
-            <!-- JaCoCo plugin (you already have this) -->
+            <!-- JaCoCo plugin -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
@@ -103,13 +90,6 @@
                     <execution>
                         <goals>
                             <goal>prepare-agent</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>report</id>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>report</goal>
                         </goals>
                     </execution>
                 </executions>
