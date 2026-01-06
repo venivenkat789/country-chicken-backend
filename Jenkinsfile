@@ -16,12 +16,6 @@ pipeline {
         JAR_NAME        = 'country-chicken-backend-1.0.0.jar'
     }
 
-    options {
-        disableConcurrentBuilds()
-        buildDiscarder(logRotator(numToKeepStr: '10'))
-        timeout(time: 20, unit: 'MINUTES')
-    }
-
     stages {
 
         stage('Checkout') {
