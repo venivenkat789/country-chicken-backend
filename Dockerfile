@@ -6,13 +6,13 @@ FROM maven:3.9.9-eclipse-temurin-11 AS build
 WORKDIR /app
 
 # Copy pom.xml and download dependencies (cache friendly)
-COPY pom.xml .
+COPY pom.xml ./
 RUN mvn dependency:go-offline -B
 
 # Copy source code and build
 COPY src ./src
+ARG APP_VERSION=1.0.0
 RUN mvn clean package -DskipTests
-
 
 # ================================
 # Stage 2: Runtime image
@@ -31,13 +31,14 @@ RUN groupadd -r spring && useradd -r -g spring spring
 # Set working directory
 WORKDIR /app
 
-# Copy JAR from build stage
-COPY --from=build /app/target/country-chicken-backend-1.0.0.jar app.jar
+# Copy JAR from build stage (dynamic version)
+ARG APP_VERSION=1.0.0
+COPY --from=build /app/target/country-chicken-backend-${APP_VERSION}.jar app.jar
 
-# Create logs directory and set permissions (AS ROOT)
+# Create logs directory and set permissions
 RUN mkdir -p /app/logs && chown -R spring:spring /app
 
-# Switch to non-root user (SECURITY BEST PRACTICE)
+# Switch to non-root user
 USER spring:spring
 
 # Expose application port
