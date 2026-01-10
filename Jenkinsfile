@@ -16,7 +16,6 @@ pipeline {
         DOCKER_REPO      = 'docker-releases'
 
         GROUP_ID         = 'com.countrychicken'
-
         VERSION          = ''
         JAR_NAME         = ''
     }
@@ -94,6 +93,7 @@ pipeline {
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
                     sh """
+
                     echo "$DOCKER_PASS" | docker login ${NEXUS_DOCKER_URL} -u "$DOCKER_USER" --password-stdin
 
                     docker push ${NEXUS_DOCKER_URL}/${DOCKER_REPO}/${APP_NAME}:${VERSION}
@@ -101,6 +101,7 @@ pipeline {
 
                     docker logout ${NEXUS_DOCKER_URL}
                     """
+
                 }
             }
         }
