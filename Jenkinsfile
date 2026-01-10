@@ -7,19 +7,21 @@ pipeline {
     }
 
     environment {
-        APP_NAME           = 'country-chicken-backend'
+        APP_NAME         = 'country-chicken-backend'
 
         // Nexus URLs
-        NEXUS_MAVEN_URL    = '3.89.152.50:8081'
-        NEXUS_DOCKER_URL   = '3.89.152.50:8082'
+        NEXUS_MAVEN_URL  = '3.89.152.50:8081'
+        NEXUS_DOCKER_URL = '3.89.152.50:8082'
 
         // Repositories
-        MAVEN_REPO         = 'maven-releases'
-        DOCKER_REPO        = 'docker-releases'
+        MAVEN_REPO       = 'maven-releases'
+        DOCKER_REPO      = 'docker-releases'
 
-        GROUP_ID           = 'com.countrychicken'
-        VERSION            = "${BUILD_NUMBER}"
-        JAR_NAME           = 'country-chicken-backend-1.0.0.jar'
+        GROUP_ID         = 'com.countrychicken'
+
+        // Will be dynamically set in first stage
+        VERSION          = ''
+        JAR_NAME         = ''
     }
 
     stages {
@@ -28,6 +30,17 @@ pipeline {
             steps {
                 git branch: 'main',
                     url: 'https://github.com/srikanth78933/country-chicken-backend.git'
+            }
+        }
+
+        stage('Set Version') {
+            steps {
+                script {
+                    // Extract version from pom.xml
+                    VERSION = sh(script: "mvn help:evaluate -Dexpression=project.version -q -DforceStdout", returnStdout: true).trim()
+                    JAR_NAME = "${APP_NAME}-${VERSION}.jar"
+                    echo "✅ Version set to ${VERSION}"
+                }
             }
         }
 
@@ -62,7 +75,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 sh """
-                  docker build \
+                docker build --build-arg APP_VERSION=${VERSION} \
                   -t ${NEXUS_DOCKER_URL}/${DOCKER_REPO}/${APP_NAME}:${VERSION} \
                   -t ${NEXUS_DOCKER_URL}/${DOCKER_REPO}/${APP_NAME}:latest .
                 """
@@ -77,13 +90,12 @@ pipeline {
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
                     sh '''
-                      echo "$DOCKER_PASS" | docker login ${NEXUS_DOCKER_URL} \
-                      -u "$DOCKER_USER" --password-stdin
+                    echo "$DOCKER_PASS" | docker login ${NEXUS_DOCKER_URL} -u "$DOCKER_USER" --password-stdin
 
-                      docker push ${NEXUS_DOCKER_URL}/${DOCKER_REPO}/${APP_NAME}:${VERSION}
-                      docker push ${NEXUS_DOCKER_URL}/${DOCKER_REPO}/${APP_NAME}:latest
+                    docker push ${NEXUS_DOCKER_URL}/${DOCKER_REPO}/${APP_NAME}:${VERSION}
+                    docker push ${NEXUS_DOCKER_URL}/${DOCKER_REPO}/${APP_NAME}:latest
 
-                      docker logout ${NEXUS_DOCKER_URL}
+                    docker logout ${NEXUS_DOCKER_URL}
                     '''
                 }
             }
