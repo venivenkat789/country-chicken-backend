@@ -10,7 +10,7 @@ pipeline {
         APP_NAME         = 'country-chicken-backend'
 
         NEXUS_MAVEN_URL  = '16.171.23.105:8081'
-        NEXUS_DOCKER_URL = '16.171.57.79:8082'
+        NEXUS_DOCKER_URL = '16.171.23.105:8082'
 
         MAVEN_REPO       = 'maven-releases'
         DOCKER_REPO      = 'docker-releases'
@@ -24,7 +24,7 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                git branch: 'test',
+                git branch: 'main',
                     url: 'https://github.com/venivenkat789/country-chicken-backend.git'
             }
         }
