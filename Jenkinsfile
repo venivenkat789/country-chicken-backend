@@ -1,8 +1,15 @@
 pipeline {
     agent any
 
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+        skipDefaultCheckout(true)
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+    }
+
     tools {
-        maven 'maven3.9.11'
+        maven 'maven3.9.12'
         jdk 'java17'
     }
 
@@ -16,8 +23,6 @@ pipeline {
         DOCKER_REPO      = 'docker-releases'
 
         GROUP_ID         = 'com.countrychicken'
-        VERSION          = ''
-        JAR_NAME         = ''
     }
 
     stages {
@@ -32,17 +37,19 @@ pipeline {
         stage('Set Version') {
             steps {
                 script {
-                    VERSION = sh(
+                    def version = sh(
                         script: "mvn help:evaluate -Dexpression=project.version -q -DforceStdout",
                         returnStdout: true
                     ).trim()
 
-                    if (!VERSION) {
-                        error "❌ Version not found from pom.xml"
+                    if (!version) {
+                        error "❌ Version not found in pom.xml"
                     }
 
-                    JAR_NAME = "${APP_NAME}-${VERSION}.jar"
-                    echo "✅ Version: ${VERSION}"
+                    env.VERSION = version
+                    env.JAR_NAME = "${APP_NAME}-${version}.jar"
+
+                    echo "✅ Version detected: ${env.VERSION}"
                 }
             }
         }
@@ -50,6 +57,12 @@ pipeline {
         stage('Build JAR') {
             steps {
                 sh 'mvn clean package -DskipTests'
+            }
+        }
+
+        stage('Verify JAR') {
+            steps {
+                sh "ls -lh target/${JAR_NAME}"
             }
         }
 
@@ -63,14 +76,12 @@ pipeline {
                     version: "${VERSION}",
                     repository: "${MAVEN_REPO}",
                     credentialsId: 'nexus-credentials',
-                    artifacts: [
-                        [
-                            artifactId: "${APP_NAME}",
-                            classifier: '',
-                            file: "target/${JAR_NAME}",
-                            type: 'jar'
-                        ]
-                    ]
+                    artifacts: [[
+                        artifactId: "${APP_NAME}",
+                        classifier: '',
+                        file: "target/${JAR_NAME}",
+                        type: 'jar'
+                    ]]
                 )
             }
         }
@@ -93,15 +104,14 @@ pipeline {
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
                     sh """
-
-                    echo "$DOCKER_PASS" | docker login ${NEXUS_DOCKER_URL} -u "$DOCKER_USER" --password-stdin
+                    echo "\$DOCKER_PASS" | docker login ${NEXUS_DOCKER_URL} \
+                        -u "\$DOCKER_USER" --password-stdin
 
                     docker push ${NEXUS_DOCKER_URL}/${DOCKER_REPO}/${APP_NAME}:${VERSION}
                     docker push ${NEXUS_DOCKER_URL}/${DOCKER_REPO}/${APP_NAME}:latest
 
                     docker logout ${NEXUS_DOCKER_URL}
                     """
-
                 }
             }
         }
