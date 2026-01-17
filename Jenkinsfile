@@ -42,7 +42,7 @@ pipeline {
                     ).trim()
 
                     env.JAR_NAME = "${APP_NAME}-${VERSION}"
-                    echo "Version: ${VERSION}"
+                    echo "Building version: ${VERSION}"
                 }
             }
         }
@@ -101,8 +101,8 @@ pipeline {
 
     post {
         always {
-            sh 'docker system prune -f'
-            cleanWs()
+            echo "Cleaning workspace safely..."
+            cleanWs(deleteDirs: true, disableDeferredWipeout: true)
         }
     }
 }
