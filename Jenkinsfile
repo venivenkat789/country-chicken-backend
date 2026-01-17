@@ -15,7 +15,6 @@ pipeline {
 
     environment {
         APP_NAME         = 'country-chicken-backend'
-
         NEXUS_MAVEN_URL  = 'http://13.53.174.188:8081'
         NEXUS_DOCKER_URL = '13.53.174.188:8082'
 
@@ -42,7 +41,7 @@ pipeline {
                         returnStdout: true
                     ).trim()
 
-                    env.JAR_NAME = "${APP_NAME}-${VERSION}.jar"
+                    env.JAR_NAME = "${APP_NAME}-${VERSION}"
                     echo "Version: ${VERSION}"
                 }
             }
@@ -67,7 +66,7 @@ pipeline {
                     artifacts: [[
                         artifactId: "${APP_NAME}",
                         classifier: '',
-                        file: "target/${JAR_NAME}",
+                        file: "target/${APP_NAME}-${VERSION}.jar",
                         type: 'jar'
                     ]]
                 )
@@ -102,7 +101,7 @@ pipeline {
 
     post {
         always {
-            docker system prune -f
+            sh 'docker system prune -f'
             cleanWs()
         }
     }
