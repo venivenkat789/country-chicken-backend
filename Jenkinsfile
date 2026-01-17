@@ -43,13 +43,13 @@ pipeline {
                     ).trim()
 
                     if (!version) {
-                        error "❌ Version not found in pom.xml"
+                        error "Version not found in pom.xml"
                     }
 
                     env.VERSION = version
                     env.JAR_NAME = "${APP_NAME}-${version}.jar"
 
-                    echo "✅ Version detected: ${env.VERSION}"
+                    echo "Version detected: ${env.VERSION}"
                 }
             }
         }
@@ -90,8 +90,7 @@ pipeline {
             steps {
                 sh """
                 docker build \
-                  -t ${NEXUS_DOCKER_URL}/${DOCKER_REPO}/${APP_NAME}:${VERSION} \
-                  -t ${NEXUS_DOCKER_URL}/${DOCKER_REPO}/${APP_NAME}:latest .
+                  -t ${NEXUS_DOCKER_URL}/${DOCKER_REPO}/${APP_NAME}:${VERSION} .
                 """
             }
         }
@@ -108,7 +107,6 @@ pipeline {
                         -u "\$DOCKER_USER" --password-stdin
 
                     docker push ${NEXUS_DOCKER_URL}/${DOCKER_REPO}/${APP_NAME}:${VERSION}
-                    docker push ${NEXUS_DOCKER_URL}/${DOCKER_REPO}/${APP_NAME}:latest
 
                     docker logout ${NEXUS_DOCKER_URL}
                     """
@@ -119,10 +117,10 @@ pipeline {
 
     post {
         success {
-            echo "✅ Build & Push Successful"
+            echo "Build & Push Successful"
         }
         failure {
-            echo "❌ Build Failed"
+            echo "Build Failed"
         }
         always {
             sh 'docker system prune -f'
