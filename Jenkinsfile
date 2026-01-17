@@ -16,13 +16,13 @@ pipeline {
     environment {
         APP_NAME         = 'country-chicken-backend'
 
-        NEXUS_MAVEN_URL  = '13.53.174.188:8081'
+        NEXUS_MAVEN_URL  = 'http://13.53.174.188:8081'
         NEXUS_DOCKER_URL = '13.53.174.188:8082'
 
-        MAVEN_REPO       = 'maven-releases'
-        DOCKER_REPO      = 'docker-releases'
+        MAVEN_REPO  = 'maven-releases'
+        DOCKER_REPO = 'docker-releases'
 
-        GROUP_ID         = 'com.countrychicken'
+        GROUP_ID = 'com.countrychicken'
     }
 
     stages {
@@ -37,19 +37,13 @@ pipeline {
         stage('Set Version') {
             steps {
                 script {
-                    def version = sh(
+                    env.VERSION = sh(
                         script: "mvn help:evaluate -Dexpression=project.version -q -DforceStdout",
                         returnStdout: true
                     ).trim()
 
-                    if (!version) {
-                        error "Version not found in pom.xml"
-                    }
-
-                    env.VERSION = version
-                    env.JAR_NAME = "${APP_NAME}-${version}.jar"
-
-                    echo "Version detected: ${env.VERSION}"
+                    env.JAR_NAME = "${APP_NAME}-${VERSION}.jar"
+                    echo "Version: ${VERSION}"
                 }
             }
         }
@@ -60,18 +54,12 @@ pipeline {
             }
         }
 
-        stage('Verify JAR') {
-            steps {
-                sh "ls -lh target/${JAR_NAME}"
-            }
-        }
-
         stage('Upload JAR to Nexus') {
             steps {
                 nexusArtifactUploader(
                     nexusVersion: 'nexus3',
                     protocol: 'http',
-                    nexusUrl: "${NEXUS_MAVEN_URL}",
+                    nexusUrl: '13.53.174.188:8081',
                     groupId: "${GROUP_ID}",
                     version: "${VERSION}",
                     repository: "${MAVEN_REPO}",
@@ -89,8 +77,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 sh """
-                docker build \
-                  -t ${NEXUS_DOCKER_URL}/${DOCKER_REPO}/${APP_NAME}:${VERSION} .
+                docker build -t ${NEXUS_DOCKER_URL}/${DOCKER_REPO}/${APP_NAME}:${VERSION} .
                 """
             }
         }
@@ -104,11 +91,9 @@ pipeline {
                 )]) {
                     sh """
                     echo "\$DOCKER_PASS" | docker login ${NEXUS_DOCKER_URL} \
-                        -u "\$DOCKER_USER" --password-stdin
+                      -u "\$DOCKER_USER" --password-stdin
 
                     docker push ${NEXUS_DOCKER_URL}/${DOCKER_REPO}/${APP_NAME}:${VERSION}
-
-                    docker logout ${NEXUS_DOCKER_URL}
                     """
                 }
             }
@@ -116,14 +101,8 @@ pipeline {
     }
 
     post {
-        success {
-            echo "Build & Push Successful"
-        }
-        failure {
-            echo "Build Failed"
-        }
         always {
-            sh 'docker system prune -f'
+            docker system prune -f
             cleanWs()
         }
     }
